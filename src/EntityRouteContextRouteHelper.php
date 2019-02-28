@@ -121,6 +121,7 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
     $item = $this->cache->get(static::ENTITY_ROUTE_CONTEXT_MAP);
     if (FALSE !== $item) {
       $this->routes = $item->data ?? [];
+      return;
     }
 
     $pathByRouteName = array_map(
