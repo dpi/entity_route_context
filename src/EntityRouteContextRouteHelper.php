@@ -142,7 +142,7 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
     }
 
     // Same tag used by entity type definitions in 'discovery' bin.
-    $tags = ['entity_types'];
+    $tags = ['entity_types', 'routes'];
     $this->cache->set(static::ENTITY_ROUTE_CONTEXT_MAP, $routes, Cache::PERMANENT, $tags);
     $this->routes = $routes;
   }
