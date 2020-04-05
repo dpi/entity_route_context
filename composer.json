@@ -11,6 +11,7 @@
     "source": "http://cgit.drupalcode.org/entity_route_context"
   },
   "require": {
-    "php": "^7.1"
+    "php": "^7.3",
+    "drupal/core": "^9"
   }
 }
