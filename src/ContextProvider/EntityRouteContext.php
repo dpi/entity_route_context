@@ -4,8 +4,10 @@ declare(strict_types = 1);
 
 namespace Drupal\entity_route_context\ContextProvider;
 
+use Drupal\block_content\Entity\BlockContent;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\Context\Context;
 use Drupal\Core\Plugin\Context\ContextDefinition;
@@ -15,6 +17,7 @@ use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\entity_route_context\EntityRouteContextRouteHelperInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\node\Entity\Node;
 
 /**
  * Determines if the route is owned by an entities link template.
@@ -36,6 +39,13 @@ class EntityRouteContext implements ContextProviderInterface {
    * @var \Drupal\Core\Routing\RouteMatchInterface
    */
   protected $routeMatch;
+
+  /**
+   * Entity bundle info.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
+   */
+  protected $bundleInfo;
 
   /**
    * Entity route helper.
@@ -64,20 +74,26 @@ class EntityRouteContext implements ContextProviderInterface {
    * @param \Drupal\entity_route_context\EntityRouteContextRouteHelperInterface $helper
    *   Entity route helper.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, RouteMatchInterface $route_match, EntityRouteContextRouteHelperInterface $helper) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, RouteMatchInterface $route_match, EntityRouteContextRouteHelperInterface $helper, EntityTypeBundleInfoInterface $bundleInfo) {
     $this->routeMatch = $route_match;
     $this->helper = $helper;
     $this->entityTypeManager = $entityTypeManager;
+    $this->bundleInfo = $bundleInfo;
   }
 
   /**
    * {@inheritdoc}
    */
   public function getRuntimeContexts(array $unqualified_context_ids): array {
+    // @todo only return those they ask for.
     $contexts = [];
 
     $entityTypeId = $this->helper
       ->getEntityTypeId($this->routeMatch->getRouteName());
+
+    if (!in_array(static::CANONICAL_ENTITY, $unqualified_context_ids) && !in_array(static::CANONICAL_ENTITY_PREFIX . $entityTypeId, $unqualified_context_ids)) {
+      return [];
+    }
 
     /** @var \Drupal\Core\Entity\EntityInterface|null $entity */
     $entity = NULL;
@@ -99,6 +115,7 @@ class EntityRouteContext implements ContextProviderInterface {
       $contextDefinition = EntityContextDefinition::create($entityTypeId)->setRequired(FALSE);
       $context = new Context($contextDefinition, $entity);
       $context->addCacheableDependency($cacheability);
+
       $contexts[static::CANONICAL_ENTITY] = $context;
       $contexts[static::CANONICAL_ENTITY_PREFIX . $entityTypeId] = $context;
     }
@@ -130,10 +147,51 @@ class EntityRouteContext implements ContextProviderInterface {
       $context = EntityContext::fromEntityTypeId($entityTypeId, $this->t('@entity_type from route', [
         '@entity_type' => $entityTypeLabel,
       ]));
+
+      $sampleEntity = $this->generateEntity($entityTypeId);
+      if (isset($sampleEntity)) {
+        $context->getContextDefinition()->setDefaultValue($sampleEntity);
+      }
+
       $contexts[static::CANONICAL_ENTITY_PREFIX . $entityTypeId] = $context;
     }
 
     return $contexts;
+  }
+
+  /**
+   * Creates a basic entity.
+   *
+   * @param string $entityTypeId
+   *   An entity type ID.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   A basic entity.
+   */
+  protected function generateEntity(string $entityTypeId): ?EntityInterface {
+    // Work out a default value.
+    $entityTypeDefinition = $this->entityTypeManager->getDefinition($entityTypeId);
+
+    // Pick a random bundle if it supports bundles.
+    // Hopefully this value isn't used down the track (fingers crossed).
+    $bundleKey = $entityTypeDefinition->getKey('bundle');
+    $storage = $this->entityTypeManager->getStorage($entityTypeId);
+    try {
+      if ($entityTypeDefinition->getBundleEntityType() && $bundleKey !== FALSE) {
+        // Pick the first bundle that appears. Hopefully this value isn't used.
+        $bundleId = key($this->bundleInfo->getBundleInfo($entityTypeId));
+        if (is_scalar($bundleId)) {
+          return $storage->create([$bundleKey => $bundleId]);
+        }
+      }
+      else {
+        return $storage->create();
+      }
+    }
+    catch (\Exception $e) {
+    }
+
+    return NULL;
   }
 
 }
