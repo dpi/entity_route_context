@@ -5,6 +5,6 @@ services:
 
   entity_route_context.entity_route_context:
     class: Drupal\entity_route_context\ContextProvider\EntityRouteContext
-    arguments: ['@entity_type.manager', '@current_route_match', '@entity_route_context.route_helper']
+    arguments: ['@entity_type.manager', '@current_route_match', '@entity_route_context.route_helper', '@entity_type.bundle.info']
     tags:
       - { name: 'context_provider' }
