@@ -1,0 +1,7 @@
+name: Entity Route Context - Block Test Module
+type: module
+core_version_requirement: ^9
+php: 7.3
+package: Utility
+dependencies:
+  - drupal:system (>=9.0.x)
