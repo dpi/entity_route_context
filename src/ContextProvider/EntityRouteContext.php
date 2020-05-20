@@ -45,6 +45,13 @@ class EntityRouteContext implements ContextProviderInterface {
   protected $helper;
 
   /**
+   * Map of route matches to entity keyed by route name.
+   *
+   * @var \Drupal\Core\Entity\EntityInterface[]
+   */
+  protected $routeMatchedEntity = [];
+
+  /**
    * Name of context variable.
    */
   protected const CANONICAL_ENTITY = 'canonical_entity';
@@ -55,7 +62,7 @@ class EntityRouteContext implements ContextProviderInterface {
   protected const CANONICAL_ENTITY_PREFIX = 'canonical_entity:';
 
   /**
-   * Constructs a new NodeRouteContext.
+   * Constructs a new EntityRouteContext.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   Entity type manager.
@@ -74,33 +81,34 @@ class EntityRouteContext implements ContextProviderInterface {
    * {@inheritdoc}
    */
   public function getRuntimeContexts(array $unqualified_context_ids): array {
+    $cacheability = (new CacheableMetadata())->setCacheContexts(['route']);
+
     $contexts = [];
+    foreach ($unqualified_context_ids as $unqualifiedContextId) {
+      // Generate cache contexts for only the requested context IDs.
+      if (strpos($unqualifiedContextId, static::CANONICAL_ENTITY_PREFIX) === 0) {
+        $entityTypeId = substr($unqualifiedContextId, strlen(static::CANONICAL_ENTITY_PREFIX));
+        if ($this->entityTypeManager->getDefinition($entityTypeId, FALSE) === NULL) {
+          // Ignore if entity type ID missing/no longer exists.
+          continue;
+        }
 
-    $entityTypeId = $this->helper
-      ->getEntityTypeId($this->routeMatch->getRouteName());
-
-    /** @var \Drupal\Core\Entity\EntityInterface|null $entity */
-    $entity = NULL;
-    if (isset($entityTypeId)) {
-      // Only handle parameters casted to entity, return first parameter
-      // matching type.
-      foreach ($this->routeMatch->getParameters() as $parameter) {
-        if ($parameter instanceof EntityInterface && ($parameter->getEntityTypeId() === $entityTypeId)) {
-          $entity = $parameter;
-          break;
+        $entity = $this->getRouteMatchEntity($this->routeMatch);
+        // Always return a context, even if its value is NULL, so long as the
+        // entity type ID is valid.
+        $value = ($entity && $entity->getEntityTypeId() === $entityTypeId) ? $entity : NULL;
+        $contextDefinition = EntityContextDefinition::create($entityTypeId)->setRequired(FALSE);
+        $contexts[$unqualifiedContextId] = (new Context($contextDefinition, $value))
+          ->addCacheableDependency(clone $cacheability);
+      }
+      elseif ($unqualifiedContextId === static::CANONICAL_ENTITY) {
+        if ($entity = $this->getRouteMatchEntity($this->routeMatch)) {
+          // The multi-purpose generic entity context.
+          $contextDefinition = EntityContextDefinition::create($entity->getEntityTypeId())->setRequired(FALSE);
+          $contexts[static::CANONICAL_ENTITY] = (new Context($contextDefinition, $entity))
+            ->addCacheableDependency(clone $cacheability);
         }
       }
-    }
-
-    if ($entity) {
-      $cacheability = (new CacheableMetadata())
-        ->setCacheContexts(['route']);
-
-      $contextDefinition = EntityContextDefinition::create($entityTypeId)->setRequired(FALSE);
-      $context = new Context($contextDefinition, $entity);
-      $context->addCacheableDependency($cacheability);
-      $contexts[static::CANONICAL_ENTITY] = $context;
-      $contexts[static::CANONICAL_ENTITY_PREFIX . $entityTypeId] = $context;
     }
 
     return $contexts;
@@ -134,6 +142,41 @@ class EntityRouteContext implements ContextProviderInterface {
     }
 
     return $contexts;
+  }
+
+  /**
+   * Determines entity for a route match.
+   *
+   * @param \Drupal\Core\Routing\RouteMatchInterface $routeMatch
+   *   A route match.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   The entity for the provided route match, or NULL if the route is note an
+   *   entity template.
+   */
+  protected function getRouteMatchEntity(RouteMatchInterface $routeMatch): ?EntityInterface {
+    $routeName = $routeMatch->getRouteName();
+    if (!$routeName) {
+      return NULL;
+    }
+
+    if (array_key_exists($routeName, $this->routeMatchedEntity)) {
+      return $this->routeMatchedEntity[$routeName];
+    }
+
+    $routeEntityTypeId = $this->helper->getEntityTypeId($routeName);
+
+    if (isset($routeEntityTypeId)) {
+      // Only handle parameters casted to entity, return first parameter
+      // matching type.
+      foreach ($this->routeMatch->getParameters() as $parameter) {
+        if ($parameter instanceof EntityInterface && ($parameter->getEntityTypeId() === $routeEntityTypeId)) {
+          return $this->routeMatchedEntity[$routeName] = $parameter;
+        }
+      }
+    }
+
+    return $this->routeMatchedEntity[$routeName] = NULL;
   }
 
 }

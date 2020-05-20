@@ -1,0 +1,5 @@
+name: Entity Route Context - Block Test Module
+type: module
+core: 8.x
+php: 7.1
+package: Utility
