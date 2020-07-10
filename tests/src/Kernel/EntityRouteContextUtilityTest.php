@@ -40,6 +40,16 @@ class EntityRouteContextUtilityTest extends KernelTestBase {
   }
 
   /**
+   * Tests getting all routes.
+   *
+   * @covers ::getEntityTypeId
+   */
+  public function testGetEntityTypeId(): void {
+    $result = $this->getHelper()->getEntityTypeId('entity.entity_test.canonical');
+    $this->assertEquals('entity_test', $result);
+  }
+
+  /**
    * Tests getting routes for an entity type.
    *
    * @covers ::getRouteNames

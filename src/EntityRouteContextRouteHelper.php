@@ -120,7 +120,7 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
       $this->primeCaches();
     }
 
-    return $this->routes[$routeName] ?? NULL;
+    return $this->routes[$routeName][0] ?? NULL;
   }
 
   /**
