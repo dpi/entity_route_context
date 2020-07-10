@@ -27,7 +27,20 @@ class EntityRouteContextUtilityTest extends KernelTestBase {
   ];
 
   /**
-   * Tests link template result from a route match instance.
+   * Tests getting all routes.
+   *
+   * @covers ::getAllRouteNames
+   */
+  public function testGetAllRouteNames(): void {
+    $result = $this->getHelper()->getAllRouteNames();
+    $this->assertEquals('entity_test', $result['entity.entity_test.canonical']);
+    $this->assertEquals('entity_test', $result['entity.entity_test.add_form']);
+    $this->assertEquals('entity_test', $result['entity.entity_test.edit_form']);
+    $this->assertEquals('entity_test', $result['entity.entity_test.delete_form']);
+  }
+
+  /**
+   * Tests getting routes for an entity type.
    *
    * @covers ::getRouteNames
    */
@@ -40,7 +53,7 @@ class EntityRouteContextUtilityTest extends KernelTestBase {
   }
 
   /**
-   * Tests link template result from a route match instance.
+   * Tests get link by route match helper.
    *
    * @covers ::getLinkTemplateByRouteMatch
    */

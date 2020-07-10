@@ -83,7 +83,9 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
       $this->primeCaches();
     }
 
-    return $this->routes;
+    return array_map(function (array $value): string {
+      return $value[0];
+    }, $this->routes);
   }
 
   /**
