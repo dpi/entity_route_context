@@ -7,6 +7,7 @@ namespace Drupal\entity_route_context;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Routing\RouteProviderInterface;
 use Symfony\Component\Routing\Route;
 
@@ -97,7 +98,14 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
       $this->primeCaches();
     }
 
-    $this->routesByEntityType[$entityTypeId] = array_keys($this->routes, $entityTypeId, TRUE);
+    $this->routesByEntityType[$entityTypeId] = array_keys(
+      array_filter(
+        $this->routes,
+        function (array $value) use ($entityTypeId): bool {
+          return $value[0] === $entityTypeId;
+        }
+      )
+    );
 
     return $this->routesByEntityType[$entityTypeId];
   }
@@ -110,6 +118,21 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
       $this->primeCaches();
     }
 
+    return $this->routes[$routeName] ?? NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLinkTemplateByRouteMatch(RouteMatchInterface $routeMatch): ?array {
+    if (!isset($this->routes)) {
+      $this->primeCaches();
+    }
+
+    $routeName = $routeMatch->getRouteName();
+    if (!is_string($routeName)) {
+      return NULL;
+    }
     return $this->routes[$routeName] ?? NULL;
   }
 
@@ -133,10 +156,10 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
 
     $routes = [];
     foreach ($this->entityTypeManager->getDefinitions() as $entityType) {
-      foreach ($entityType->getLinkTemplates() as $linkTemplate) {
+      foreach ($entityType->getLinkTemplates() as $linkTemplateKey => $linkTemplate) {
         $key = array_search($linkTemplate, $pathByRouteName);
         if ($key !== FALSE) {
-          $routes[$key] = $entityType->id();
+          $routes[$key] = [$entityType->id(), $linkTemplateKey];
         }
       }
     }
