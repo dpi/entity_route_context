@@ -152,9 +152,9 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
       function (Route $route) {
         return $route->getPath();
       },
-      // Method getAllRoutes used to return an interable, despite its interface
-      // claiming an array. 2917331 changed toto always return an array.
-      is_iterable($allRoutes) ? iterator_to_array($allRoutes) : $allRoutes
+      // Method getAllRoutes used to return an iterable, despite its interface
+      // claiming an array. 2917331 changed to always return an array.
+      is_array($allRoutes) ? $allRoutes : iterator_to_array($allRoutes)
     );
 
     $routes = [];
