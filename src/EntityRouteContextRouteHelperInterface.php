@@ -21,7 +21,7 @@ interface EntityRouteContextRouteHelperInterface {
    * Get all routes for an entity type.
    *
    * @param string $entityTypeId
-   *  An entity type.
+   *   An entity type.
    *
    * @return array
    *   An array of route names.
