@@ -4,6 +4,8 @@ declare(strict_types = 1);
 
 namespace Drupal\entity_route_context;
 
+use Drupal\Core\Routing\RouteMatchInterface;
+
 /**
  * Interface for route helper.
  */
@@ -39,5 +41,18 @@ interface EntityRouteContextRouteHelperInterface {
    *   entity link template.
    */
   public function getEntityTypeId(string $routeName): ?string;
+
+  /**
+   * Get the entity type and link template for a route match.
+   *
+   * @param \Drupal\Core\Routing\RouteMatchInterface $routeMatch
+   *   A route match to get entity type and link template.
+   *
+   * @return string[]|null
+   *   An array with two values with keys, or NULL if not matched:
+   *   - 0: (string) The entity type.
+   *   - 1: (string) The link template.
+   */
+  public function getLinkTemplateByRouteMatch(RouteMatchInterface $routeMatch): ?array;
 
 }
