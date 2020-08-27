@@ -26,7 +26,7 @@ interface EntityRouteContextRouteHelperInterface {
    *   An entity type.
    *
    * @return array
-   *   An array of route names.
+   *   An array of route names keyed by link template.
    */
   public function getRouteNames(string $entityTypeId): array;
 

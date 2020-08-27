@@ -61,7 +61,7 @@ class EntityRouteContextTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->typedDataManager = $this->createMock(TypedDataManagerInterface::class);
     $this->typedDataManager = $this->getMockBuilder(TypedDataManager::class)

@@ -100,14 +100,17 @@ class EntityRouteContextRouteHelper implements EntityRouteContextRouteHelperInte
       $this->primeCaches();
     }
 
-    $this->routesByEntityType[$entityTypeId] = array_keys(
-      array_filter(
-        $this->routes,
-        function (array $value) use ($entityTypeId): bool {
-          return $value[0] === $entityTypeId;
-        }
-      )
+    $routes = array_filter(
+      $this->routes,
+      function (array $value) use ($entityTypeId): bool {
+        return $value[0] === $entityTypeId;
+      }
     );
+
+    $this->routesByEntityType[$entityTypeId] = [];
+    foreach ($routes as $routeName => [, $linkTemplate]) {
+      $this->routesByEntityType[$entityTypeId][$linkTemplate] = $routeName;
+    }
 
     return $this->routesByEntityType[$entityTypeId];
   }

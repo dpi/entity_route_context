@@ -52,14 +52,16 @@ class EntityRouteContextUtilityTest extends KernelTestBase {
   /**
    * Tests getting routes for an entity type.
    *
+   * Asserts link template associates with route names.
+   *
    * @covers ::getRouteNames
    */
   public function testGetRouteNames(): void {
     $result = $this->getHelper()->getRouteNames('entity_test');
-    $this->assertContains('entity.entity_test.canonical', $result);
-    $this->assertContains('entity.entity_test.add_form', $result);
-    $this->assertContains('entity.entity_test.edit_form', $result);
-    $this->assertContains('entity.entity_test.delete_form', $result);
+    $this->assertEquals('entity.entity_test.canonical', $result['canonical']);
+    $this->assertEquals('entity.entity_test.add_form', $result['add-form']);
+    $this->assertEquals('entity.entity_test.edit_form', $result['edit-form']);
+    $this->assertEquals('entity.entity_test.delete_form', $result['delete-form']);
   }
 
   /**
